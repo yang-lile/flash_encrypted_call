@@ -26,13 +26,15 @@ dependencies:
   camera: ^0.5.8+2
   path: ^1.6.4
   path_provider: ^1.6.11
+  # 用于bloc
   bloc: ^6.0.2
+  equatable: ^1.2.4
+  flutter_bloc: ^6.0.2
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^0.1.3
   quantize_dart: ^1.0.3
-  lamp_kotlin: 
+  lamp_kotlin:
     path: D:\workspace\ProjuctFiles\lamp_kotlin
 
 dev_dependencies:

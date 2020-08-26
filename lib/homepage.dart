@@ -1,7 +1,9 @@
+import 'package:flash_encrypted_call/bloc/camerabloc/camerabloc_bloc.dart';
 import 'package:flash_encrypted_call/page/camera_home.dart';
 import 'package:flash_encrypted_call/page/flash_home.dart';
 import 'package:flutter/material.dart';
 import 'package:lamp_kotlin/lamp_kotlin.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 enum HomePageStatus { FLASH, CAMERA }
 
@@ -42,6 +44,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // 相机的state
+    final cameraState = BlocProvider.of<CamerablocBloc>(context).state;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -99,23 +103,38 @@ class _HomePageState extends State<HomePage> {
             case HomePageStatus.FLASH:
               return FlashHome();
             case HomePageStatus.CAMERA:
-              return CameraHome();
+              return BlocProvider(
+                lazy: false,
+                create: (context) => CamerablocBloc(),
+                child: CameraHome(
+                  BlocProvider.of<CamerablocBloc>(context).state,
+                ),
+              );
           }
           return Container();
         },
       ),
       floatingActionButton: this._currentIndex == 0
           ? FloatingActionButton(
-            heroTag: "FAB_tag",
-            child: Icon(Icons.link),
-            onPressed: () {
-              LampKotlin.openLamp();
-              Future.delayed(Duration(seconds: 1)).then(
-                (value) => LampKotlin.closeLamp(),
-              );
-            },
-          )
-          : null,
+              heroTag: "FAB_tag",
+              child: Icon(Icons.link),
+              onPressed: () {
+                LampKotlin.openLamp();
+                Future.delayed(Duration(seconds: 1)).then(
+                  (value) => LampKotlin.closeLamp(),
+                );
+              },
+            )
+          : AbsorbPointer(
+              absorbing: cameraState.camera.isScanning,
+              child: FloatingActionButton(
+                heroTag: "FAB_tag",
+                child: cameraState.camera.isScanning
+                    ? Icon(Icons.cached)
+                    : Icon(Icons.camera_alt),
+                onPressed: () => cameraState.camera.fabOnPressed(),
+              ),
+            ),
       floatingActionButtonLocation: this._currentIndex == 0
           ? FloatingActionButtonLocation.centerDocked
           : null,
