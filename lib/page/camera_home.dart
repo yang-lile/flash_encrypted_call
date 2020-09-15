@@ -7,24 +7,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CameraHome extends StatefulWidget {
-  final CamerablocState cameraState;
-  CameraHome(this.cameraState);
   @override
   _CameraHomeState createState() => _CameraHomeState();
 }
 
 class _CameraHomeState extends State<CameraHome> {
-  CamerablocState cameraState;
-
+  CamerablocBloc camerablocBloc;
   @override
   void initState() {
     super.initState();
-    cameraState = widget.cameraState;
+    camerablocBloc = CamerablocBloc()..add(CameraInitial());
   }
 
   @override
   void dispose() {
-    cameraState.camera.dispose();
+    camerablocBloc.add(CameraDisposed());
     super.dispose();
   }
 
@@ -42,7 +39,11 @@ class _CameraHomeState extends State<CameraHome> {
             body: Column(
               children: <Widget>[
                 _BuildPicturePreView(i: i, size: 300.0),
-                Text(cameraState.camera.picDatas[i].toString()),
+                BlocBuilder<CamerablocBloc, CamerablocState>(
+                  builder: (context, state) {
+                    return Text(state.camera.picDatas[i].toString());
+                  },
+                ),
               ],
             ),
           );
@@ -53,8 +54,6 @@ class _CameraHomeState extends State<CameraHome> {
 
   @override
   Widget build(BuildContext context) {
-    final _cameraController = cameraState.camera.cameraController;
-
     return ListView(
       children: <Widget>[
         // 预览
@@ -62,19 +61,26 @@ class _CameraHomeState extends State<CameraHome> {
           alignment: Alignment.center,
           fit: StackFit.loose,
           children: <Widget>[
-            FutureBuilder(
-              future: cameraState.camera.initCameraController,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  return AspectRatio(
-                    aspectRatio: _cameraController.value.aspectRatio,
-                    child: CameraPreview(_cameraController),
-                  );
-                } else {
+            BlocBuilder<CamerablocBloc, CamerablocState>(
+              builder: (context, state) {
+                print(state);
+                if (state is CameraInitialing) {
+                  print("初始化中");
                   return Center(
                     child: CircularProgressIndicator(),
                   );
+                } else if (state is CameraReady) {
+                  print("初始化完成");
+
+                  return AspectRatio(
+                    aspectRatio:
+                        state.camera.cameraController.value.aspectRatio,
+                    child: CameraPreview(state.camera.cameraController),
+                  );
+                } else {
+                  print(state);
                 }
+                return Container();
               },
             ),
             FractionallySizedBox(
@@ -108,18 +114,22 @@ class _CameraHomeState extends State<CameraHome> {
         ),
 
         // 拍摄结果预览
-        Wrap(
-          children: <Widget>[
-            for (int i = 0; i < cameraState.camera.picMessage.length; i++)
-              Ink(
-                child: InkWell(
-                  // 点击跳转到预览界面
-                  onTap: () => _jumpPreviewPage(context, i),
-                  child: _BuildPicturePreView(i: i, size: 50.0),
-                ),
-              ),
-          ],
-        ),
+        BlocBuilder<CamerablocBloc, CamerablocState>(
+          builder: (context, state) {
+            return Wrap(
+              children: <Widget>[
+                for (int i = 0; i < state.camera.picMessage.length; i++)
+                  Ink(
+                    child: InkWell(
+                      // 点击跳转到预览界面
+                      onTap: () => _jumpPreviewPage(context, i),
+                      child: _BuildPicturePreView(i: i, size: 50.0),
+                    ),
+                  ),
+              ],
+            );
+          },
+        )
       ],
     );
   }
@@ -137,31 +147,32 @@ class _BuildPicturePreView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cameraState = BlocProvider.of<CamerablocBloc>(context).state;
-
     return Padding(
       padding: const EdgeInsets.all(4.0),
-      child: Stack(
-        children: [
-          Image.file(
-            File(cameraState.camera.picPath[i]),
-            height: size,
-            width: size,
-            alignment: Alignment.center,
-          ),
-          Container(
-            height: size,
-            width: size,
-            decoration: BoxDecoration(
-              border: Border.all(
-                width: 4.0,
-                color: cameraState.camera.picMessage[i]
-                    ? Colors.green
-                    : Colors.red,
+      child: BlocBuilder<CamerablocBloc, CamerablocState>(
+        builder: (context, state) {
+          return Stack(
+            children: [
+              Image.file(
+                File(state.camera.picPath[i]),
+                height: size,
+                width: size,
+                alignment: Alignment.center,
               ),
-            ),
-          ),
-        ],
+              Container(
+                height: size,
+                width: size,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    width: 4.0,
+                    color:
+                        state.camera.picMessage[i] ? Colors.green : Colors.red,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

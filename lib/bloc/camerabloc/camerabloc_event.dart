@@ -16,3 +16,7 @@ abstract class CamerablocEvent extends Equatable {
 class CameraTakePicture extends CamerablocEvent {}
 
 class CameraDecrypt extends CamerablocEvent {}
+
+class CameraInitial extends CamerablocEvent {}
+
+class CameraDisposed extends CamerablocEvent {}

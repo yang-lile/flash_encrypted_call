@@ -12,7 +12,6 @@ class MyCamera {
   List<String> picPath = [];
   List<bool> picMessage = [];
   List<dynamic> picDatas = [];
-  bool isScanning = false;
 
   MyCamera() {
     initCameraController = initCamera();
@@ -147,7 +146,6 @@ class MyCamera {
     this.picPath = [];
     this.picDatas = [];
     Stream stream = Stream.periodic(Duration(milliseconds: 600)).take(30);
-    isScanning = true;
     stream.listen(
       (event) async {
         final reback = await _takePicture();
@@ -161,7 +159,6 @@ class MyCamera {
   }
 
   picturesDecode() {
-    isScanning = false;
     final result = _decodedMessage(picMessage);
     if (result.isEmpty) {
       _showInSnackBar("没有检测到，请点击图片修改或者重试");

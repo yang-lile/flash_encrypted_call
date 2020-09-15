@@ -16,21 +16,37 @@ abstract class CamerablocState extends Equatable {
 }
 
 class CamerablocInitial extends CamerablocState {
-  CamerablocInitial() : super() {
-    print("CamerablocInitial");
+  CamerablocInitial() : super();
+
+  @override
+  String toString() {
+    return "CamerablocInitial";
   }
 }
 
-class CameraInitial extends CamerablocState {
-  CameraInitial() : super() {
-    print("CameraInitial");
+class CameraInitialing extends CamerablocState {
+  CameraInitialing() : super();
+
+  @override
+  String toString() {
+    return "CameraInitialing";
   }
 }
 
 class CameraReady extends CamerablocState {
   CameraReady(MyCamera camera) : super(camera: camera);
+
+  @override
+  String toString() {
+    return "CameraReady";
+  }
 }
 
 class CameraTaking extends CamerablocState {
   CameraTaking(MyCamera camera) : super(camera: camera);
+
+  @override
+  String toString() {
+    return "CameraTaking";
+  }
 }

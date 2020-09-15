@@ -45,7 +45,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     // 相机的state
-    final cameraState = BlocProvider.of<CamerablocBloc>(context).state;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -97,23 +96,7 @@ class _HomePageState extends State<HomePage> {
           }
         },
       ),
-      body: Builder(
-        builder: (context) {
-          switch (_homePageStatus) {
-            case HomePageStatus.FLASH:
-              return FlashHome();
-            case HomePageStatus.CAMERA:
-              return BlocProvider(
-                lazy: false,
-                create: (context) => CamerablocBloc(),
-                child: CameraHome(
-                  BlocProvider.of<CamerablocBloc>(context).state,
-                ),
-              );
-          }
-          return Container();
-        },
-      ),
+      body: _HomeBody(homePageStatus: _homePageStatus),
       floatingActionButton: this._currentIndex == 0
           ? FloatingActionButton(
               heroTag: "FAB_tag",
@@ -125,19 +108,67 @@ class _HomePageState extends State<HomePage> {
                 );
               },
             )
-          : AbsorbPointer(
-              absorbing: cameraState.camera.isScanning,
-              child: FloatingActionButton(
-                heroTag: "FAB_tag",
-                child: cameraState.camera.isScanning
-                    ? Icon(Icons.cached)
-                    : Icon(Icons.camera_alt),
-                onPressed: () => cameraState.camera.fabOnPressed(),
-              ),
-            ),
+          : _CameraAction(),
       floatingActionButtonLocation: this._currentIndex == 0
           ? FloatingActionButtonLocation.centerDocked
           : null,
     );
+  }
+}
+
+class _CameraAction extends StatelessWidget {
+  const _CameraAction({
+    Key key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CamerablocBloc, CamerablocState>(
+      cubit: CamerablocBloc(),
+      builder: (context, state) {
+        if (state is CameraReady) {
+          return FloatingActionButton(
+            heroTag: "FAB_tag",
+            child: Icon(Icons.camera_alt),
+            onPressed: () {
+              CamerablocBloc().add(CameraTakePicture());
+            },
+          );
+        } else {
+          return AbsorbPointer(
+            child: FloatingActionButton(
+              heroTag: "FAB_tag",
+              child: Icon(Icons.cached),
+              onPressed: () {},
+            ),
+          );
+        }
+      },
+    );
+  }
+}
+
+class _HomeBody extends StatelessWidget {
+  const _HomeBody({
+    Key key,
+    @required HomePageStatus homePageStatus,
+  })  : _homePageStatus = homePageStatus,
+        super(key: key);
+
+  final HomePageStatus _homePageStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (_homePageStatus) {
+      case HomePageStatus.FLASH:
+        return FlashHome();
+      case HomePageStatus.CAMERA:
+        BlocProvider(
+          lazy: false,
+          create: (context) => CamerablocBloc(),
+          child: CameraHome(),
+        );
+    }
+    return Container();
   }
 }

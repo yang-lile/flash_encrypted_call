@@ -11,9 +11,9 @@ part 'camerabloc_state.dart';
 class CamerablocBloc extends Bloc<CamerablocEvent, CamerablocState> {
   CamerablocBloc() : super(CamerablocInitial());
 
-  CamerablocState get initialState => CameraInitial();
+  CamerablocState get initialState => CameraInitialing();
 
-  MyCamera _camera = MyCamera();
+  MyCamera _camera;
 
   @override
   Stream<CamerablocState> mapEventToState(
@@ -22,10 +22,17 @@ class CamerablocBloc extends Bloc<CamerablocEvent, CamerablocState> {
     if (event is CameraTakePicture) {
       _camera.fabOnPressed();
       yield CameraTaking(_camera);
-    }
-    if (event is CameraDecrypt) {
+    } else if (event is CameraDecrypt) {
       _camera.picturesDecode();
       yield CameraReady(_camera);
+    } else if (event is CameraInitial) {
+      _camera = MyCamera();
+      yield CameraInitialing();
+      await _camera.initCameraController;
+      yield CameraReady(_camera);
+    } else if (event is CameraDisposed) {
+      _camera.dispose();
+      yield null;
     }
   }
 }
