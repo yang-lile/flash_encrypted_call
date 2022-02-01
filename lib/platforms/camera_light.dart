@@ -21,7 +21,7 @@ class SendMessage {
 
   List<int> _transcoding(List<bool> code) {
     var now = code[0];
-    List<int> tcode = List<int>();
+    List<int> tcode = [];
     int count = 0;
     for (var item = 1; item < code.length; item++) {
       if (now == code[item]) {
@@ -51,7 +51,7 @@ class SendMessage {
       } else {
         LampKotlin.closeLamp();
       }
-      await Future.delayed(Duration(milliseconds: 600 * i));
+      await Future.delayed(Duration(milliseconds: 1000 * i));
     }
     LampKotlin.closeLamp();
     return _continue;

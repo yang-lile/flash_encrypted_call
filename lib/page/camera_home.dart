@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
-import 'package:flash_encrypted_call/bloc/camerabloc/camerabloc_bloc.dart';
+import 'package:flash_encrypted_call/bloc/camera_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -12,19 +12,6 @@ class CameraHome extends StatefulWidget {
 }
 
 class _CameraHomeState extends State<CameraHome> {
-  CamerablocBloc camerablocBloc;
-  @override
-  void initState() {
-    super.initState();
-    camerablocBloc = CamerablocBloc()..add(CameraInitial());
-  }
-
-  @override
-  void dispose() {
-    camerablocBloc.add(CameraDisposed());
-    super.dispose();
-  }
-
   /// 跳转事件
   /// 跳转至预览传入一个下标
   Future _jumpPreviewPage(BuildContext context, int i) {
@@ -36,15 +23,39 @@ class _CameraHomeState extends State<CameraHome> {
             appBar: AppBar(
               title: Text("第${i + 1}张图片信息"),
             ),
-            body: Column(
-              children: <Widget>[
-                _BuildPicturePreView(i: i, size: 300.0),
-                BlocBuilder<CamerablocBloc, CamerablocState>(
-                  builder: (context, state) {
-                    return Text(state.camera.picDatas[i].toString());
-                  },
-                ),
-              ],
+            body: BlocBuilder<CameraBloc, CameraState>(
+              builder: (context, state) {
+                if (state is CameraTook) {
+                  return Column(
+                    children: <Widget>[
+                      _BuildPicturePreView(
+                        i: i,
+                        size: 300.0,
+                        picMessage: state.picMessage,
+                        picPath: state.picPath,
+                      ),
+                      Text(
+                        state.picDatas[i].toString(),
+                      ),
+                    ],
+                  );
+                } else {
+                  return Text("未知错误001");
+                }
+                // return Column(
+                //   children: <Widget>[
+                //     _BuildPicturePreView(
+                //       i: i,
+                //       size: 300.0,
+                //       picMessage: GV.picMessage,
+                //       picPath: GV.picPath,
+                //     ),
+                //     // Text(
+                //     //   GV.picDatas[i].toString(),
+                //     // ),
+                //   ],
+                // );
+              },
             ),
           );
         },
@@ -61,26 +72,26 @@ class _CameraHomeState extends State<CameraHome> {
           alignment: Alignment.center,
           fit: StackFit.loose,
           children: <Widget>[
-            BlocBuilder<CamerablocBloc, CamerablocState>(
+            BlocBuilder<CameraBloc, CameraState>(
               builder: (context, state) {
-                print(state);
-                if (state is CameraInitialing) {
-                  print("初始化中");
-                  return Center(
-                    child: CircularProgressIndicator(),
-                  );
-                } else if (state is CameraReady) {
-                  print("初始化完成");
-
+                if (state is CameraReady) {
                   return AspectRatio(
-                    aspectRatio:
-                        state.camera.cameraController.value.aspectRatio,
-                    child: CameraPreview(state.camera.cameraController),
+                    aspectRatio: state.cameraController.value.aspectRatio,
+                    child: CameraPreview(state.cameraController),
+                  );
+                } else if (state is CameraTook) {
+                  return AspectRatio(
+                    aspectRatio: state.cameraController.value.aspectRatio,
+                    child: CameraPreview(state.cameraController),
+                  );
+                } else if (state is CameraTaking) {
+                  return AspectRatio(
+                    aspectRatio: state.cameraController.value.aspectRatio,
+                    child: CameraPreview(state.cameraController),
                   );
                 } else {
-                  print(state);
+                  return CircularProgressIndicator();
                 }
-                return Container();
               },
             ),
             FractionallySizedBox(
@@ -112,24 +123,51 @@ class _CameraHomeState extends State<CameraHome> {
             ),
           ],
         ),
-
         // 拍摄结果预览
-        BlocBuilder<CamerablocBloc, CamerablocState>(
-          builder: (context, state) {
-            return Wrap(
-              children: <Widget>[
-                for (int i = 0; i < state.camera.picMessage.length; i++)
-                  Ink(
-                    child: InkWell(
-                      // 点击跳转到预览界面
-                      onTap: () => _jumpPreviewPage(context, i),
-                      child: _BuildPicturePreView(i: i, size: 50.0),
+        Center(
+          child: BlocBuilder<CameraBloc, CameraState>(
+            builder: (context, state) {
+              if (state is CameraTaking) {
+                return Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.start,
+                    alignment: WrapAlignment.center,
+                    children: <Widget>[
+                      for (int i = 0; i < state.picPath.length; i++)
+                        Ink(
+                          child: InkWell(
+                            // 点击跳转到预览界面
+                            onTap: () => _jumpPreviewPage(context, i),
+                            child: _BuildPicturePreView(
+                              i: i,
+                              size: 50.0,
+                              picPath: state.picPath,
+                              picMessage: state.picMessage,
+                            ),
+                          ),
+                        ),
+                    ]);
+              } else if (state is CameraTook) {
+                return Wrap(children: <Widget>[
+                  for (int i = 0; i < state.picPath.length; i++)
+                    Ink(
+                      child: InkWell(
+                        // 点击跳转到预览界面
+                        onTap: () => _jumpPreviewPage(context, i),
+                        child: _BuildPicturePreView(
+                          i: i,
+                          size: 50.0,
+                          picPath: state.picPath,
+                          picMessage: state.picMessage,
+                        ),
+                      ),
                     ),
-                  ),
-              ],
-            );
-          },
-        )
+                ]);
+              } else {
+                return Container();
+              }
+            },
+          ),
+        ),
       ],
     );
   }
@@ -140,40 +178,73 @@ class _BuildPicturePreView extends StatelessWidget {
     Key key,
     @required this.i,
     @required this.size,
+    @required this.picPath,
+    @required this.picMessage,
   }) : super(key: key);
 
   final int i;
   final double size;
+  final List picPath;
+  final List picMessage;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(4.0),
-      child: BlocBuilder<CamerablocBloc, CamerablocState>(
-        builder: (context, state) {
-          return Stack(
-            children: [
-              Image.file(
-                File(state.camera.picPath[i]),
-                height: size,
-                width: size,
-                alignment: Alignment.center,
-              ),
-              Container(
-                height: size,
-                width: size,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    width: 4.0,
-                    color:
-                        state.camera.picMessage[i] ? Colors.green : Colors.red,
+    return BlocBuilder<CameraBloc, CameraState>(
+      builder: (context, state) {
+        if (state is CameraTook) {
+          return Padding(
+            padding: const EdgeInsets.all(4.0),
+            child: Stack(
+              children: [
+                Image.file(
+                  File(state.picPath[i]),
+                  height: size,
+                  width: size,
+                  alignment: Alignment.center,
+                ),
+                Container(
+                  height: size,
+                  width: size,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      width: 4.0,
+                      color: state.picMessage[i] ? Colors.green : Colors.red,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
-        },
-      ),
+        } else if (state is CameraTaking) {
+          return Padding(
+            padding: const EdgeInsets.all(4.0),
+            child: Stack(
+              children: [
+                Image.file(
+                  File(state.picPath[i]),
+                  height: size,
+                  width: size,
+                  alignment: Alignment.center,
+                ),
+                Container(
+                  height: size,
+                  width: size,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      width: 4.0,
+                      color: state.picMessage[i] ? Colors.green : Colors.red,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else {
+          return Container(
+            child: Text("什么都没有加载到。。。"),
+          );
+        }
+      },
     );
   }
 }

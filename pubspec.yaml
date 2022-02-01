@@ -35,11 +35,14 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   quantize_dart: ^1.0.3
   lamp_kotlin:
-    path: D:\workspace\ProjuctFiles\lamp_kotlin
+    path: D://workspace//ProjuctFiles//lamp_kotlin
+  freezed_annotation: ^0.11.0+1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  freezed: ^0.11.6
+  build_runner: any
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

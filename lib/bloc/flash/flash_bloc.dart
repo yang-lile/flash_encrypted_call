@@ -13,6 +13,5 @@ class FlashBloc extends Bloc<FlashEvent, FlashState> {
   Stream<FlashState> mapEventToState(
     FlashEvent event,
   ) async* {
-    // TODO: implement mapEventToState
   }
 }
